@@ -93,6 +93,25 @@ fn place(window: &WebviewWindow, height: f64, anchor: Option<PhysicalRect<f64, f
     let _ = window.set_position(PhysicalPosition::new(x, y));
 }
 
+/// Lets the panel appear over full-screen apps. By default a macOS window belongs to one
+/// Space, so opening it while another app is full screen showed nothing (it opened on the
+/// desktop Space instead). Also raises it to the pop-up menu level, like a real menu.
+#[cfg(target_os = "macos")]
+fn float_over_fullscreen(window: &WebviewWindow) {
+    use objc2_app_kit::{NSWindow, NSWindowCollectionBehavior};
+
+    const POP_UP_MENU_LEVEL: isize = 101; // kCGPopUpMenuWindowLevel
+    let Ok(ptr) = window.ns_window() else { return };
+    // SAFETY: Tauri returns the panel's live NSWindow, and this runs on the main thread.
+    let ns_window = unsafe { &*(ptr as *const NSWindow) };
+    ns_window.setCollectionBehavior(
+        NSWindowCollectionBehavior::CanJoinAllSpaces
+            | NSWindowCollectionBehavior::FullScreenAuxiliary
+            | NSWindowCollectionBehavior::Transient,
+    );
+    ns_window.setLevel(POP_UP_MENU_LEVEL);
+}
+
 fn toggle_panel(app: &AppHandle, anchor: Option<PhysicalRect<f64, f64>>) {
     let Some(window) = app.get_webview_window(PANEL) else { return };
     let state = app.state::<AppState>();
@@ -176,6 +195,11 @@ pub fn run() {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
             build_tray(app.handle())?;
+
+            #[cfg(target_os = "macos")]
+            if let Some(window) = app.get_webview_window(PANEL) {
+                float_over_fullscreen(&window);
+            }
 
             let handle = app.handle().clone();
             watcher::spawn(providers::all(), move |out, initial| {
