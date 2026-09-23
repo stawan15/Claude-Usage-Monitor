@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claude Usage Monitor</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="panel" id="panel">
+      <section class="box">
+        <div class="title"><span class="spinner" id="spinner">✻</span><strong>AI Usage Monitor</strong></div>
+        <div class="status dim" id="status">Reading logs…</div>
+      </section>
+
+      <nav class="tabs" id="tools" hidden></nav>
+
+      <section class="section" id="block" hidden></section>
+      <section class="section" id="limits" hidden></section>
+
+      <nav class="tabs" id="ranges">
+        <button data-range="today">Today</button>
+        <button data-range="week">7 days</button>
+        <span class="spacer"></span>
+        <span class="subtle">tab ⇥</span>
+      </nav>
+
+      <section class="section" id="usage"></section>
+      <section class="section" id="by-tool" hidden></section>
+      <section class="section" id="by-model" hidden></section>
+      <section class="section" id="by-project" hidden></section>
+
+      <p class="note subtle" id="unpriced" hidden></p>
+
+      <footer class="footer">
+        <button class="plain" id="autostart"><span id="autostart-box">[ ]</span> <span class="dim">launch at login</span></button>
+        <span class="spacer"></span>
+        <button class="plain" id="quit"><span id="quit-key">⌘Q</span> <span class="dim">quit</span></button>
+      </footer>
+    </main>
+  </body>
+</html>

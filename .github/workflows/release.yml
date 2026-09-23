@@ -1,0 +1,69 @@
+name: Release
+
+# Push a tag like v0.1.0 to build installers for macOS, Windows and Linux
+# and publish them as a GitHub release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
+          - platform: ubuntu-22.04
+            args: ""
+          - platform: windows-latest
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend tooling
+        run: bun install --frozen-lockfile
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tauriScript: bunx tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: Claude Usage Monitor ${{ github.ref_name }}
+          releaseBody: |
+            Download the file for your system below. See the README for first-launch notes
+            (the builds are not code-signed, so macOS and Windows will ask you to confirm).
+
+            | System | File |
+            |---|---|
+            | macOS (Apple Silicon) | `*_aarch64.dmg` |
+            | macOS (Intel) | `*_x64.dmg` |
+            | Windows | `*_x64-setup.exe` or `*_x64_en-US.msi` |
+            | Linux | `*_amd64.AppImage`, `*_amd64.deb` or `*.x86_64.rpm` |
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

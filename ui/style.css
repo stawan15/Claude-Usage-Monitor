@@ -1,0 +1,166 @@
+/* Claude Code's terminal palette. */
+:root {
+  --claude: #d77757;
+  --text: #141414;
+  --dim: #666666;
+  --subtle: #bebebe;
+  --bg: #fcfcfa;
+  --success: #2c7a39;
+  --warning: #966c1e;
+  --error: #c0392b;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #ebebeb;
+    --dim: #999999;
+    --subtle: #4b4b4b;
+    --bg: #161616;
+    --success: #4eba65;
+    --warning: #ffc107;
+    --error: #ff6b80;
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+body {
+  font: 12px/1.45 "SF Mono", ui-monospace, Menlo, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  color: var(--text);
+}
+
+.panel {
+  width: 380px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--bg);
+  border: 1px solid var(--subtle);
+  border-radius: 10px;
+}
+
+.dim { color: var(--dim); }
+.subtle { color: var(--subtle); }
+.accent { color: var(--claude); }
+.warn { color: var(--warning); }
+.spacer { flex: 1; }
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Rounded box like Claude Code's welcome banner. */
+.box {
+  border: 1px solid var(--claude);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.title {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.spinner {
+  color: var(--claude);
+  width: 14px;
+  display: inline-block;
+  text-align: center;
+}
+
+.status { padding-left: 20px; margin-top: 4px; }
+.live { color: var(--success); }
+
+/* `❯ Selected   Other` option rows. */
+.tabs {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+}
+
+.tabs button { color: var(--dim); white-space: pre; }
+.tabs button::before { content: "  "; }
+.tabs button.selected { color: var(--claude); font-weight: 600; }
+.tabs button.selected::before { content: "❯ "; }
+
+/* `⏺ Title` with an indented `⎿` result, as Claude Code renders tool calls. */
+.section-head {
+  display: flex;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.section-head .bullet { font-weight: normal; }
+.section-head .trailing { margin-left: auto; font-weight: normal; color: var(--dim); }
+
+.section-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 6px;
+  padding-left: 8px;
+  margin-top: 2px;
+}
+
+.section-body > .elbow { color: var(--dim); }
+.rows { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.row .label {
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.row .value { white-space: nowrap; }
+.row .detail { color: var(--dim); width: 62px; text-align: right; white-space: nowrap; }
+.row.em .label { color: var(--text); }
+.row.em .value { color: var(--claude); font-weight: 600; }
+
+/* `████████░░░░` bar. */
+.bar { white-space: pre; letter-spacing: -0.5px; }
+.bar .fill { color: var(--claude); }
+.bar .empty { color: var(--subtle); }
+
+.note {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer {
+  display: flex;
+  align-items: baseline;
+  border-top: 1px solid var(--subtle);
+  padding-top: 8px;
+}
+
+.footer button:disabled { opacity: 0.5; cursor: default; }
+.checked { color: var(--success); }
