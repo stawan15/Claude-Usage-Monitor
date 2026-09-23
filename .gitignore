@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Swift prototype build output
+.build/
+build/
+*.app
+
+# Rust / Tauri
+target/
+src-tauri/gen/
+
+# Node
+node_modules/
+dist/
+
+# Editors / local tooling
+.vscode/
+.idea/
+.claude/
+*.log
