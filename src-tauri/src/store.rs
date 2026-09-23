@@ -109,13 +109,21 @@ pub struct Store {
     events: Vec<UsageEvent>,
     limits: HashMap<String, LimitStatus>,
     pricing: Pricing,
-    pub filter: Option<Tool>,
+    filter: Option<Tool>,
+    /// False until the user picks a tab; until then the panel opens on Claude Code
+    /// (the "All" view is the tallest) when there is Claude usage to show.
+    filter_chosen: bool,
     pub loaded: bool,
 }
 
 impl Store {
     pub fn new() -> Self {
-        Self { events: Vec::new(), limits: HashMap::new(), pricing: Pricing::load(), filter: None, loaded: false }
+        Self { events: Vec::new(), limits: HashMap::new(), pricing: Pricing::load(), filter: None, filter_chosen: false, loaded: false }
+    }
+
+    pub fn set_filter(&mut self, filter: Option<Tool>) {
+        self.filter = filter;
+        self.filter_chosen = true;
     }
 
     pub fn ingest(&mut self, out: ScanOutput, initial: bool) {
@@ -143,7 +151,15 @@ impl Store {
             .unwrap_or(now);
         let start_of_week = start_of_today - Duration::days(6);
         let block_len = Duration::hours(BLOCK_HOURS);
-        let show_block = matches!(self.filter, None | Some(Tool::ClaudeCode));
+
+        let filter = if self.filter_chosen {
+            self.filter
+        } else if self.events.iter().any(|e| e.tool == Tool::ClaudeCode && e.date >= start_of_week) {
+            Some(Tool::ClaudeCode)
+        } else {
+            None
+        };
+        let show_block = matches!(filter, None | Some(Tool::ClaudeCode));
 
         let mut today = Accumulator::default();
         let mut week = Accumulator::default();
@@ -177,7 +193,7 @@ impl Store {
                 }
             }
 
-            if self.filter.is_some_and(|f| f != event.tool) {
+            if filter.is_some_and(|f| f != event.tool) {
                 continue;
             }
             if cost.is_none() {
@@ -204,7 +220,7 @@ impl Store {
         let mut limits: Vec<Limit> = self
             .limits
             .values()
-            .filter(|l| l.resets_at.is_none_or(|r| r > now) && self.filter.is_none_or(|f| f == l.tool))
+            .filter(|l| l.resets_at.is_none_or(|r| r > now) && filter.is_none_or(|f| f == l.tool))
             .map(|l| Limit {
                 tool: l.tool,
                 tool_name: l.tool.short_name(),
@@ -220,7 +236,7 @@ impl Store {
 
         Snapshot {
             loaded: self.loaded,
-            filter: self.filter,
+            filter,
             today: today.stats(),
             week: week.stats(),
             block,
@@ -319,6 +335,13 @@ mod tests {
     }
 
     #[test]
+    fn falls_back_to_all_without_claude_usage() {
+        let mut store = Store::new();
+        store.ingest(ScanOutput { events: vec![event(Tool::Codex, 3, 50)], limits: vec![] }, true);
+        assert_eq!(store.snapshot(Utc::now()).filter, None);
+    }
+
+    #[test]
     fn model_names() {
         assert_eq!(model_name("claude-opus-5-5"), "Opus 5.5");
         assert_eq!(model_name("claude-haiku-4-5-20251001"), "Haiku 4.5");
@@ -331,12 +354,18 @@ mod tests {
         let out = ScanOutput { events: vec![event(Tool::ClaudeCode, 5, 100), event(Tool::Codex, 3, 50)], limits: vec![] };
         store.ingest(out, true);
 
+        // Opens on Claude Code by default.
+        let snap = store.snapshot(Utc::now());
+        assert_eq!(snap.filter, Some(Tool::ClaudeCode));
+        assert_eq!(snap.week.totals.total, 100);
+
+        store.set_filter(None);
         let snap = store.snapshot(Utc::now());
         assert_eq!(snap.week.totals.total, 150);
         assert_eq!(snap.tools.len(), 2);
         assert_eq!(snap.block.as_ref().unwrap().totals.total, 100);
 
-        store.filter = Some(Tool::Codex);
+        store.set_filter(Some(Tool::Codex));
         let snap = store.snapshot(Utc::now());
         assert_eq!(snap.week.totals.total, 50);
         assert!(snap.block.is_none());

@@ -37,7 +37,7 @@ fn get_snapshot(state: tauri::State<AppState>) -> Snapshot {
 fn set_filter(app: AppHandle, state: tauri::State<AppState>, filter: Option<Tool>) -> Snapshot {
     let snapshot = {
         let mut store = state.store.lock().unwrap();
-        store.filter = filter;
+        store.set_filter(filter);
         store.snapshot(Utc::now())
     };
     update_tray(&app, &snapshot);
