@@ -1,6 +1,6 @@
 [package]
 name = "claude-usage-monitor"
-version = "0.1.0"
+version = "0.1.1"
 description = "Realtime token usage monitor for Claude Code, Codex, OpenCode and Gemini CLI"
 license = "MIT"
 edition = "2021"
